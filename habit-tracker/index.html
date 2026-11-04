@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>나의 습관 트래커</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6ee;color:#243b2b;font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif}main{max-width:1240px;margin:auto;padding:40px 20px}header,.toolbar,.stats{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}small{color:#64816a;letter-spacing:3px}h1{font-size:32px;letter-spacing:-1px;margin:8px 0}p{color:#738176;font-size:13px}.stats{gap:10px}.stat{background:white;border:1px solid #dee6d8;border-radius:15px;padding:16px 24px;text-align:center}.stat b{display:block;font-size:25px;color:#397849}.stat span{font-size:12px;color:#738176}.card{background:white;border:1px solid #dee6d8;border-radius:18px;margin-top:22px;overflow:hidden}.toolbar{padding:16px 20px}.month{display:flex;align-items:center;gap:14px}.month strong{min-width:130px;text-align:center}button,input,select{font:inherit}button{cursor:pointer;border:1px solid #d6e1d1;border-radius:8px;background:#f6f9f2;color:#397849;padding:9px 13px}button:hover{background:#e5efdf}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #83ab65;outline-offset:2px}.danger{color:#a35d59}.scroll{overflow:auto}table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}th,td{padding:8px 3px;text-align:center;min-width:31px;border-bottom:1px solid #f0f3ed}th:first-child,td:first-child{position:sticky;left:0;background:white;text-align:left;min-width:178px;padding-left:18px;z-index:1}th{color:#7d8e80;font-weight:500}th span{display:block;font-size:10px;margin-bottom:5px}.today{background:#e8f1e0}.sun{color:#c56868}.sat{color:#5b83b4}.check{padding:0;width:24px;height:24px;border:1.5px solid #becdb8;border-radius:5px;background:white}.check[aria-pressed=true]{background:#397849;border-color:#397849;color:white}.remove{border:0;background:none;color:#afaaa3;padding:4px;margin-left:7px}td:last-child{min-width:55px;font-weight:600}.add{display:flex;gap:8px;flex-wrap:wrap;padding:18px}.add input{flex:1;min-width:140px;border:1px solid #d6e1d1;border-radius:8px;padding:10px}.add select{border:1px solid #d6e1d1;border-radius:8px;background:#f6f9f2}.primary{background:#397849;color:white}.chart{padding:22px}.chart h2{font-size:15px;margin:0 0 18px}.chart svg{width:100%;height:180px;overflow:visible}.foot{text-align:center;line-height:1.8}.empty{padding:25px}.actions{display:flex;gap:6px;flex-wrap:wrap}@media(max-width:650px){main{padding:24px 12px}header{display:block}.stats{margin-top:18px}.stat{flex:1;padding:12px 8px}.toolbar{justify-content:center;padding:14px 8px}h1{font-size:27px}.chart{padding:18px}.month{justify-content:center}}
+</style></head><body><main>
+<header><div><small>BUILD A BETTER EVERYDAY</small><h1>나의 습관 트래커 🌱</h1><p>작은 실천을 모아, 꾸준한 변화를 만드세요.</p></div><div class="stats"><div class="stat"><b id="count">0</b><span>습관 개수</span></div><div class="stat"><b id="done">0</b><span>달성 횟수</span></div><div class="stat"><b id="rate">0%</b><span>월 전체 달성률</span></div></div></header>
+<section class="card"><div class="toolbar"><div class="month"><button id="prev" aria-label="이전 달">‹</button><strong id="month"></strong><button id="next" aria-label="다음 달">›</button><button id="today">이번 달</button></div><div class="actions"><button id="csv">↓ CSV 다운로드</button><button id="reset" class="danger">이번 달 초기화</button></div></div><div class="scroll"><table id="grid"></table></div><form id="add" class="add"><select id="emoji" aria-label="습관 아이콘"><option>🏃</option><option>📚</option><option>💧</option><option>🌙</option><option>💪</option><option>🧘</option><option>✍️</option><option>🎯</option></select><input id="name" aria-label="새 습관 이름" placeholder="새 습관 이름을 입력하세요" maxlength="50" required><button class="primary">+ 습관 추가</button></form></section>
+<section class="card chart"><h2>일일 달성률 추이</h2><div id="chart"></div><p>월 전체 달성률은 해당 월의 모든 날짜를 기준으로 계산합니다.</p></section>
+<p class="foot" id="status" role="status">체크하면 자동 저장됩니다 · 기록은 현재 기기·브라우저에만 보관됩니다.<br>브라우저 데이터 삭제 전 CSV로 기록을 내려받으세요.</p></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),key='jjw-habit-tracker-v1',now=new Date();
+let year=now.getFullYear(),month=now.getMonth(),data;
+const defaults={habits:[{id:'run',name:'운동하기',emoji:'🏃'},{id:'read',name:'독서 30분',emoji:'📚'},{id:'water',name:'물 2L 마시기',emoji:'💧'},{id:'sleep',name:'일찍 자기',emoji:'🌙'},{id:'meditate',name:'명상하기',emoji:'🧘'}],checks:{}};
+try{data=JSON.parse(localStorage.getItem(key))||structuredClone(defaults);if(!Array.isArray(data.habits)||!data.checks||typeof data.checks!=='object')throw Error()}catch{data=structuredClone(defaults)}
+function save(){try{localStorage.setItem(key,JSON.stringify(data))}catch{$('status').textContent='브라우저 저장이 불가능합니다. 페이지를 닫기 전 CSV를 다운로드하세요.'}}
+const prefix=()=>year+'-'+String(month+1).padStart(2,'0')+'-';
+const ck=(id,d)=>prefix()+d+':'+id;
+const days=()=>new Date(year,month+1,0).getDate();
+const on=(id,d)=>!!data.checks[ck(id,d)];
+const pct=d=>data.habits.length?Math.round(data.habits.filter(h=>on(h.id,d)).length/data.habits.length*100):0;
+function node(tag,text){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n}
+function render(){
+const n=days(),habits=data.habits;
+$('month').textContent=year+'년 '+(month+1)+'월';$('count').textContent=habits.length;
+let total=0;const table=$('grid');table.replaceChildren();const head=node('thead'),hr=node('tr');hr.append(node('th','습관'));
+for(let d=1;d<=n;d++){const th=node('th'),dow=new Date(year,month,d).getDay();th.append(node('span','일월화수목금토'[dow]),node('b',d));if(dow===0)th.className='sun';if(dow===6)th.className='sat';if(year===now.getFullYear()&&month===now.getMonth()&&d===now.getDate())th.classList.add('today');hr.append(th)}
+hr.append(node('th','달성'));head.append(hr);table.append(head);const body=node('tbody');
+habits.forEach(h=>{const tr=node('tr'),label=node('td');label.append(node('span',h.emoji+' '+h.name));const del=node('button','×');del.className='remove';del.setAttribute('aria-label',h.name+' 삭제');del.onclick=()=>{if(!confirm('이 습관과 모든 달의 관련 기록을 삭제할까요?'))return;data.habits=data.habits.filter(x=>x.id!==h.id);Object.keys(data.checks).forEach(k=>{if(k.endsWith(':'+h.id))delete data.checks[k]});save();render()};label.append(del);tr.append(label);let count=0;
+for(let d=1;d<=n;d++){const td=node('td'),b=node('button',on(h.id,d)?'✓':'');b.className='check';b.setAttribute('aria-pressed',String(on(h.id,d)));b.setAttribute('aria-label',h.name+' '+(month+1)+'월 '+d+'일');b.onclick=()=>{const k=ck(h.id,d);if(data.checks[k])delete data.checks[k];else data.checks[k]=true;save();render();const rows=table.querySelectorAll('tbody tr');const index=data.habits.findIndex(x=>x.id===h.id);rows[index]?.children[d]?.querySelector('button')?.focus({preventScroll:true})};td.append(b);tr.append(td);if(on(h.id,d))count++}
+total+=count;tr.append(node('td',count+'/'+n));body.append(tr)});
+const pr=node('tr');pr.append(node('td','일일 달성률'));for(let d=1;d<=n;d++)pr.append(node('td',pct(d)+'%'));pr.append(node('td',''));body.append(pr);table.append(body);
+$('done').textContent=total;$('rate').textContent=(n*habits.length?Math.round(total/(n*habits.length)*100):0)+'%';draw(n);
+}
+function draw(n){
+const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 1000 180');svg.setAttribute('role','img');svg.setAttribute('aria-label','선택한 달의 일별 습관 달성률 그래프');
+function el(tag,attrs,text){const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(text)e.textContent=text;svg.append(e);return e}
+[0,50,100].forEach(v=>{const y=150-v*1.3;el('line',{x1:42,y1:y,x2:980,y2:y,stroke:'#e8eee2'});el('text',{x:0,y:y+4,fill:'#7d8e80','font-size':12},v+'%')});
+const points=Array.from({length:n},(_,i)=>[42+i*938/(n-1),150-pct(i+1)*1.3]);
+el('polygon',{points:'42,150 '+points.map(p=>p.join(',')).join(' ')+' 980,150',fill:'#eaf2e3'});
+el('polyline',{points:points.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#397849','stroke-width':2.5});
+points.forEach(([x,y],i)=>{const c=el('circle',{cx:x,cy:y,r:3,fill:'#397849'});const title=document.createElementNS(ns,'title');title.textContent=(i+1)+'일: '+pct(i+1)+'%';c.append(title);if(i%5===0||i===n-1)el('text',{x,y:175,'text-anchor':'middle',fill:'#7d8e80','font-size':12},(i+1)+'일')});$('chart').replaceChildren(svg)
+}
+function move(delta){const dt=new Date(year,month+delta,1);year=dt.getFullYear();month=dt.getMonth();render()}
+$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);$('today').onclick=()=>{const d=new Date();year=d.getFullYear();month=d.getMonth();render()};
+$('add').onsubmit=e=>{e.preventDefault();const name=$('name').value.trim();if(!name)return;data.habits.push({id:crypto.randomUUID(),name,emoji:$('emoji').value});$('name').value='';save();render()};
+$('reset').onclick=()=>{if(!confirm(year+'년 '+(month+1)+'월 기록을 초기화할까요? 다른 달 기록은 유지됩니다.'))return;Object.keys(data.checks).forEach(k=>{if(k.startsWith(prefix()))delete data.checks[k]});save();render()};
+$('csv').onclick=()=>{const n=days(),rows=[['습관',...Array.from({length:n},(_,i)=>(i+1)+'일'),'합계','달성률(%)']];data.habits.forEach(h=>{let sum=0;const cells=Array.from({length:n},(_,i)=>{if(on(h.id,i+1)){sum++;return 'O'}return ''});rows.push([h.emoji+' '+h.name,...cells,sum,Math.round(sum/n*100)])});rows.push(['일일 달성률(%)',...Array.from({length:n},(_,i)=>pct(i+1))]);const escape=v=>'"'+String(v).replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';const blob=new Blob(['\ufeff'+rows.map(r=>r.map(escape).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download='habit-tracker-'+year+'-'+String(month+1).padStart(2,'0')+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+render();
+</script></body></html>
